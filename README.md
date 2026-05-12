@@ -1,87 +1,133 @@
 # ai-ops-workflow
 Compliance, Funding and Fraud RPA workflow
+AI Operations Portfolio — Michael Deng
 
-This portfolio showcases three production AI-powered automation systems I designed, built, and deployed at Lucid Motors
-(Sep 2022 – Present). 
-Each workflow runs in production daily, processing thousands of compliance-critical transactions 
-monthly with measurable business impact. All systems were built end-to-end using Python + Playwright with AI-assisted
-development (Claude Opus 4.7 + VS Code) and deployed org-wide via one-line push. I own the full lifecycle: problem identification ®
-system design ® production deployment ® monitoring ® on-call.
-ARTIFACT 1: COMPLIANCE AUTOMATION BOT (CSN Bot)
-Problem
-Financial Services Ops manually processed 4,000+ credit score disclosure notices per month. Each required 8 discrete steps
-across 3 systems (Salesforce ® Dealertrack ® customer email), taking ~4.3 minutes per transaction. At scale, this consumed
-65–70+ hours/week of specialist time with constant risk of compliance errors on federally mandated disclosures.
-Solution
-End-to-end Python + Playwright headless browser automation deployed org-wide via one-line push:
-SFDC Report (filtered queue)
-® Open Delivery Object ® Match state to dealership
-® Navigate to Dealertrack Unifi Portal
-® Enter Credit Bureau module ® Pull Experian report
-® Enter Compliance module ® Generate Risk-Based Pricing Notice
-® Save PDF locally as 'Credit Score Notice'
-® Return to SFDC ® Open Finance Object ® Attach PDF
-® Send templated email to customer on file
-® Tag #CSNS in Sales Memo field 3
-Stood up standardized VS Code environments for 3 teammates and 2 adjacent teams (Risk & Compliance, Lease Funding).
-Provided hands-on coaching for cross-functional RPA adoption.
-Impact
-Transactions Processed 4,000+/month at 100% accuracy
-Manual Hours Eliminated 200+ hours/month (~$60K+ annual cost savings)
-Compliance Errors Zero in 18+ months of production
-Peak Volume 4,287 transactions in a single month, single bot instance
-Scale 1 operator ® 5 users across 3 teams
-Tech Stack: Python · Playwright · Headless Chromium · Salesforce API · Claude (code generation + iteration) · VS Code
-ARTIFACT 2: FRAUD DETECTION BOT (LexisNexis InstantID + Emailage)
-Problem
-Risk & Compliance needed automated identity verification and fraud risk scoring on every financing application. Manual checks
-were inconsistent, unscalable, and created audit gaps. The Global Head of Risk & Compliance required a solution with configurable
-scan frequency, one-click ad-hoc capability, and a full audit trail for regulatory examination.
-Solution
-Python + Playwright bot integrating two LexisNexis risk intelligence APIs, designed in collaboration with Risk & Compliance
-leadership:
-Michael Deng | hdeng1202@gmail.com | linkedin.com/in/mhdeng | AI Operations Portfolio
-Salesforce (flagged applications queue)
-® LexisNexis InstantID API ® Identity verification score
-® LexisNexis Emailage API ® Email/phone fraud risk score
-® Pass/Fail determination (configurable thresholds)
-® Output file ® SharePoint folder (audit-ready)
-® 100% of FAILS ® routed to manual R&C; case review
-® PASSES ® sampled for QA (volume-dependent)
-Features: Configurable scan frequency (batch or continuous)
-One-click ad-hoc scan for manual spot checks
-Full SharePoint audit trail for regulatory readiness
-Impact
-Coverage 100% of flagged transactions processed automatically
-Bottleneck Removed Eliminated manual identity verification for R&C;
-Audit Readiness Full trail stored in SharePoint from day one
-Scalability Enabled fraud screening to scale without headcount
-Follow-on Scoped FICO score automation as next initiative with R&C;
-Tech Stack: Python · Playwright · LexisNexis InstantID API · LexisNexis Emailage API · SharePoint · Salesforce · Claude (development
-acceleration)
-ARTIFACT 3: AUTOMATED FUNDING SUBMISSION BOT (S4F)
-Problem
-After vehicle delivery, specialists manually assembled funding packages (invoice, title application, delivery acceptance,
-stipulations) across Salesforce and Dealertrack, then submitted to lender. Each submission required 15+ clicks across 2 systems,
-taking ~12 minutes per deal. At 600+ monthly deliveries, this consumed 28–32 hours/week.
-Solution
-Event-driven Python + Playwright bot triggered by Salesforce delivery status change:
-Salesforce Delivery Status = "Confirmed for Delivery"
-® Bot triggers automatically
-® Pulls funding docs from SFDC (invoice, title app, stips)
-® Navigates to Dealertrack Contract tab
-® Uploads each document with correct doc type mapping
-® Selects all documents ® Submits to lender
-® SFDC stage updated to "Funding Pending w/ Lender" 3
-Impact: Before ® After
-Metric Before After
-Time per submission ~12 minutes ~90 seconds
-Weekly hours consumed 28–32 hours Under 3 hours
-Automation rate 0% ~90%
-Error rate Manual entry errors Near-zero
-EOQ handling Bottleneck at quarter-end Scaled seamlessly
-Tech Stack: Python · Playwright · Salesforce API · Dealertrack API · Claude (code scaffolding + iteration)
-Michael Deng | hdeng1202@gmail.com | linkedin.com/in/mhdeng | AI Operations Portfolio
-All three systems are live in production. Combined, they process 5,000+ transactions/month, save 230+ manual
-hours/month, and have maintained zero compliance errors across 18+ months. Each was designed, built, and deployed
-end-to-end by me — from problem identification through production monitoring and on-call support.
+AI-powered workflow automation systems designed and deployed in production at Lucid Motors.
+
+## Overview
+
+This repository showcases production automation systems I designed, built, and deployed across Finance Operations, Risk & Compliance, and Funding Operations at Lucid Motors.
+
+Each workflow was developed end-to-end using Python + Playwright with AI-assisted development workflows using Claude and VS Code. These systems currently process thousands of compliance-critical transactions monthly with measurable operational impact.
+
+I owned the full lifecycle for each system:
+- Problem identification
+- Workflow mapping
+- Automation design
+- AI-assisted development
+- Production deployment
+- Monitoring & support
+
+---
+
+# Key Outcomes
+
+- Reduced onboarding and financing decision turnaround from days to seconds
+- Eliminated 230+ manual operational hours per month
+- Processed 5,000+ transactions monthly
+- Maintained zero compliance errors across 18+ months in production
+- Built scalable workflows adopted across multiple teams
+
+---
+
+# Featured Systems
+
+## 1. Compliance Automation Bot (“CSN Bot”)
+
+### Problem
+Manual processing of 4,000+ monthly credit score disclosure notices required repetitive workflows across Salesforce and Dealertrack, consuming 65–70+ hours weekly with ongoing compliance risk.
+
+### Solution
+Built a Python + Playwright automation workflow that:
+- Pulled customer credit bureau reports
+- Generated compliance disclosures automatically
+- Attached PDFs to Salesforce
+- Triggered templated customer communications
+- Logged operational status updates
+
+### Impact
+- 4,000+ monthly transactions automated
+- 100% accuracy maintained
+- Zero compliance failures
+- ~200+ manual hours eliminated monthly
+
+### Stack
+Python · Playwright · Salesforce API · Headless Chromium · Claude · VS Code
+
+---
+
+## 2. Fraud Detection Automation
+
+### Problem
+Risk & Compliance teams required scalable fraud screening and identity verification with full audit readiness.
+
+### Solution
+Built automated workflows integrating:
+- LexisNexis InstantID
+- LexisNexis Emailage
+- SharePoint audit logging
+- Salesforce workflow routing
+
+### Impact
+- 100% automated coverage of flagged applications
+- Eliminated manual identity verification bottlenecks
+- Created full audit-ready reporting infrastructure
+
+### Stack
+Python · Playwright · LexisNexis APIs · SharePoint · Salesforce · Claude
+
+---
+
+## 3. Automated Funding Submission Bot
+
+### Problem
+Post-delivery funding package submission required repetitive multi-system workflows taking ~12 minutes per transaction.
+
+### Solution
+Developed an event-driven automation system triggered by Salesforce delivery status changes that:
+- Pulled funding documentation automatically
+- Uploaded documents to Dealertrack
+- Submitted completed lender funding packages
+- Updated Salesforce workflow statuses
+
+### Impact
+- Reduced submission time from ~12 minutes → ~90 seconds
+- Reduced weekly operational workload from 30+ hours → under 3
+- Near-zero operational error rate
+
+### Stack
+Python · Playwright · Salesforce API · Dealertrack · Claude
+
+---
+
+# How I Use AI
+
+I use AI as an execution and acceleration layer within operational system design.
+
+Primary workflows include:
+- Prompt engineering
+- Code scaffolding
+- Debugging & iteration
+- Workflow logic generation
+- Rapid prototyping
+
+Tools used:
+- Claude
+- VS Code
+
+Rather than treating AI as a standalone product, I focus on applying it to real operational bottlenecks and transforming repetitive workflows into scalable systems.
+
+---
+
+# About Me
+
+I’m an operations and systems builder with a background in finance operations and strategy. My focus is designing scalable workflows that improve operational leverage, reduce friction, and accelerate execution.
+
+I specialize in:
+- Automation
+- Systems thinking
+- Cross-functional execution
+- AI-assisted workflow design
+- Product-adjacent operations
+
+LinkedIn: linkedin.com/in/mhdeng
