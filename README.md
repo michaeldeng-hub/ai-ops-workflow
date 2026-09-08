@@ -1,133 +1,50 @@
-# ai-ops-workflow
-Compliance, Funding and Fraud RPA workflow
-AI Operations Portfolio — Michael Deng
+# AI Ops Workflow
 
-AI-powered workflow automation systems designed and deployed in production at Lucid Motors.
+Production automation and AI-assisted workflows for financial services operations. This repo documents end-to-end bots and pipelines I own that remove manual review, enforce compliance, and accelerate funding, processing thousands of transactions per month.
 
 ## Overview
 
-This repository showcases production automation systems I designed, built, and deployed across Finance Operations, Risk & Compliance, and Funding Operations at Lucid Motors.
+I build and operate automation that sits across Salesforce, Dealertrack, and third-party vendor systems. The focus is reliability, auditability, and measurable operational lift, not one-off scripts. Each project below is deployed, documented, and maintained.
 
-Each workflow was developed end-to-end using Python + Playwright with AI-assisted development workflows using Claude and VS Code. These systems currently process thousands of compliance-critical transactions monthly with measurable operational impact.
+## Tech Stack
 
-I owned the full lifecycle for each system:
-- Problem identification
-- Workflow mapping
-- Automation design
-- AI-assisted development
-- Production deployment
-- Monitoring & support
+- **Languages:** Python
+- **Automation:** Playwright, RPA scripting
+- **Integrations:** Salesforce API, Dealertrack, LexisNexis
+- **AI-assisted development:** Claude, Microsoft 365 Copilot
+- **Architecture:** Consolidating individual automations into a unified MCP server for centralized orchestration and control
 
----
+## Projects
 
-# Key Outcomes
+### CSNS Compliance RPA
+Automates a legal and compliance requirement to deliver each customer a PDF containing their credit score notice. Handles document generation and routing at high volume, removing manual effort and closing a compliance gap.
+- **Impact:** Eliminates manual per-customer document handling across a large monthly volume.
+- **Stack:** Python, Playwright, PDF generation.
 
-- Reduced onboarding and financing decision turnaround from days to seconds
-- Eliminated 230+ manual operational hours per month
-- Processed 5,000+ transactions monthly
-- Maintained zero compliance errors across 18+ months in production
-- Built scalable workflows adopted across multiple teams
+### LexisNexis Fraud Detection Bot
+Automates identity and fraud checks against LexisNexis, flagging risk signals before deals advance. Includes security hardening of the RPA scripts to protect credentials and sensitive data.
+- **Impact:** Faster, consistent fraud screening with reduced manual review.
+- **Stack:** Python, Playwright, LexisNexis integration.
 
----
+### Funding Submission Bot
+Automates identification and routing of funding submissions to reduce manual review effort and accelerate funding time. The bot speeds processing, not credit decisions.
+- **Impact:** Shorter funding cycle time and less manual routing.
+- **Stack:** Python, Salesforce API, Dealertrack.
 
-# Featured Systems
+### MCP Consolidation
+Splices multiple standalone automations into a single MCP server for more robust, centralized workflow control and easier monitoring.
+- **Status:** In progress.
+- **Goal:** One orchestration layer for all bots.
 
-## 1. Compliance Automation Bot (“CSN Bot”)
+## Impact Summary
 
-### Problem
-Manual processing of 4,000+ monthly credit score disclosure notices required repetitive workflows across Salesforce and Dealertrack, consuming 65–70+ hours weekly with ongoing compliance risk.
+| Area | Result |
+|------|--------|
+| Compliance | Automated credit score notice delivery at scale |
+| Fraud | Automated LexisNexis screening with hardened scripts |
+| Funding | Reduced manual review and faster funding time |
+| Volume | Thousands of transactions automated per month |
 
-### Solution
-Built a Python + Playwright automation workflow that:
-- Pulled customer credit bureau reports
-- Generated compliance disclosures automatically
-- Attached PDFs to Salesforce
-- Triggered templated customer communications
-- Logged operational status updates
+## Notes
 
-### Impact
-- 4,000+ monthly transactions automated
-- 100% accuracy maintained
-- Zero compliance failures
-- ~200+ manual hours eliminated monthly
-
-### Stack
-Python · Playwright · Salesforce API · Headless Chromium · Claude · VS Code
-
----
-
-## 2. Fraud Detection Automation
-
-### Problem
-Risk & Compliance teams required scalable fraud screening and identity verification with full audit readiness.
-
-### Solution
-Built automated workflows integrating:
-- LexisNexis InstantID
-- LexisNexis Emailage
-- SharePoint audit logging
-- Salesforce workflow routing
-
-### Impact
-- 100% automated coverage of flagged applications
-- Eliminated manual identity verification bottlenecks
-- Created full audit-ready reporting infrastructure
-
-### Stack
-Python · Playwright · LexisNexis APIs · SharePoint · Salesforce · Claude
-
----
-
-## 3. Automated Funding Submission Bot
-
-### Problem
-Post-delivery funding package submission required repetitive multi-system workflows taking ~12 minutes per transaction.
-
-### Solution
-Developed an event-driven automation system triggered by Salesforce delivery status changes that:
-- Pulled funding documentation automatically
-- Uploaded documents to Dealertrack
-- Submitted completed lender funding packages
-- Updated Salesforce workflow statuses
-
-### Impact
-- Reduced submission time from ~12 minutes → ~90 seconds
-- Reduced weekly operational workload from 30+ hours → under 3
-- Near-zero operational error rate
-
-### Stack
-Python · Playwright · Salesforce API · Dealertrack · Claude
-
----
-
-# How I Use AI
-
-I use AI as an execution and acceleration layer within operational system design.
-
-Primary workflows include:
-- Prompt engineering
-- Code scaffolding
-- Debugging & iteration
-- Workflow logic generation
-- Rapid prototyping
-
-Tools used:
-- Claude
-- VS Code
-
-Rather than treating AI as a standalone product, I focus on applying it to real operational bottlenecks and transforming repetitive workflows into scalable systems.
-
----
-
-# About Me
-
-I’m an operations and systems builder with a background in finance operations and strategy. My focus is designing scalable workflows that improve operational leverage, reduce friction, and accelerate execution.
-
-I specialize in:
-- Automation
-- Systems thinking
-- Cross-functional execution
-- AI-assisted workflow design
-- Product-adjacent operations
-
-LinkedIn: linkedin.com/in/mhdeng
+These automations run against regulated financial data. Credentials and PII are handled through secured configuration and are never committed to this repository.
