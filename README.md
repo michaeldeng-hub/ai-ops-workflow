@@ -3,7 +3,6 @@
 Production automation and AI-assisted workflows for financial services operations. This repo documents end-to-end bots and pipelines I own that remove manual review, enforce compliance, and accelerate funding, processing thousands of transactions per month.
 
 ## Overview
-
 I build and operate automation that sits across Salesforce, Dealertrack, and third-party vendor systems. The focus is reliability, auditability, and measurable operational lift, not one-off scripts. Each project below is deployed, documented, and maintained.
 
 ## Tech Stack
