@@ -1,6 +1,6 @@
 # ai-ops-workflow
 
-**Compliance, Funding, and Fraud automation — production RPA and agent-native operations at Lucid Motors.**
+**Compliance, Funding, and Fraud automation — production RPA and agent-native operations at my current role**
 Michael Deng · [linkedin.com/in/mhdeng](https://linkedin.com/in/mhdeng)
 
 Browser automation and AI tooling I designed, built, and deployed in Finance Services- Operations, Risk & Compliance, and Funding Operations. Every system here ran against live regulated
@@ -255,13 +255,9 @@ winning strategy is recorded in the output**: `headerMethod`, `strategy`, `frame
 
 ### MFA is a native Windows app
 
-The Okta Verify prompt is an Electron desktop window. Playwright cannot see it. Four escalating
-strategies — pywinauto UIA, inline PowerShell UIA, keyboard, strictly-validated OCR — and three
-findings that cost real time:
 
-- Electron ignores synthetic mouse clicks; the accessibility `Invoke()` pattern is what works.
-- The button reads `"Yes, it's me"` with a **curly** apostrophe (U+2019). Every hand-typed selector used the straight one and silently matched nothing.
-- Stop after one successful click. Retrying MFA locks the account.
+
+
 
 The keyboard strategy presses keys at *whatever currently has focus* — harmless when the script
 typed the password, destructive when a human is mid-sign-in. It's gated behind an explicit
