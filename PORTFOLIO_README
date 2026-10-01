@@ -1,327 +1,112 @@
 # ai-ops-workflow
 
-**Compliance, Funding, and Fraud automation — production RPA and agent-native operations at my current role**
+**Compliance, funding, and fraud workflow automation for regulated financial services operations.**
 Michael Deng · [linkedin.com/in/mhdeng](https://linkedin.com/in/mhdeng)
 
-Browser automation and AI tooling I designed, built, and deployed in Finance Services- Operations, Risk & Compliance, and Funding Operations. Every system here ran against live regulated
-workflows — credit disclosures, identity verification, and lender funding packages — where a
-silent failure is a compliance event, not a bug report.
+I designed, built, and supported these automations for financial services operations, risk and compliance, and funding teams. Each one ran in a regulated workflow (credit disclosures, identity verification, lender funding) where a silent failure becomes a compliance event, not a bug report. I owned each system end to end, from problem identification and workflow mapping through design, AI-assisted development, deployment, and ongoing support.
 
-I owned the full lifecycle on each: problem identification, workflow mapping, automation
-design, AI-assisted development, production deployment, and ongoing support.
+> **Scope:** This repository is a descriptive case study only. It contains no employer source code, data, configurations, credentials, customer information, or internal documentation. Metrics are rounded. Details about authentication, security controls, and vendor systems are intentionally omitted.
 
 ---
 
-## The systems
+## Systems
 
 | # | System | Domain | Status |
 |---|---|---|---|
-| 1 | [CSN Compliance Bot](#1-csn-compliance-bot) | Credit disclosure delivery | Production|
-| 2 | [Fraud & Identity Verification](#2-fraud--identity-verification) | Risk & Compliance screening | Production |
-| 3 | [Funding Submission Bot](#3-funding-submission-bot) | Post-delivery lender funding | Production |
-| 4 | [LNFD — MCP Automation Platform](#4-lnfd--mcp-automation-platform) | Agent-native operations layer | Built, piloting |
+| 1 | Compliance Disclosure Automation | Credit disclosure delivery | Production |
+| 2 | Fraud and Identity Screening | Risk and compliance | Production |
+| 3 | Funding Submission Automation | Post-delivery lender funding | Production |
+| 4 | Agent-Native Automation Layer (MCP) | Composable operations tooling | Piloting |
 
-The first three are RPA pipelines. The fourth is what I'd build if I started today: the same
-capabilities, decomposed into composable tools an LLM can call directly.
-
----
-
-## Key outcomes
-
-**Measured** — from `run_history.csv`, 2,185 logged production runs of the CSN pipeline:
-
-| Metric | Automated | Manual equivalent |
-|---|---|---|
-| End-to-end per customer | **~150 s** | 5–10 min |
-| Credit pull → disclosure PDF | 57.5 s avg (27 s – 174 s) | 2-3 min|
-| Upload + templated email + status update | 91.1 s avg | 2-3 min |
-|  
-**Program-level:**
-
-- 4,000+ monthly credit disclosure transactions automated
-- 5,000+ transactions per month processed across all three systems
-- 230+ manual operational hours eliminated per month
-- Zero customer-facing compliance errors across 18+ months in production
-- Funding submission reduced from ~12 min to ~90 s per transaction
-- Weekly funding ops workload cut from 30+ hours to under 3
+Systems 1 through 3 are task-specific pipelines. System 4 is how I would build them today: the same capabilities broken into composable tools that an LLM can call under human-defined guardrails.
 
 ---
 
-## 1. CSN Compliance Bot
+## Outcomes (approximate)
 
-**Credit Score Notice / Risk-Based Pricing disclosure — the regulated notice that must reach a
-customer whenever credit is pulled and pricing is risk-based.**
-
-### Problem
-
-Every financed delivery required an operator to log into DealerTrack under the customer's
-*registration-state dealership*, pull a credit bureau, generate an RBP notice, download the
-PDF, then upload and email it through Salesforce and mark the record. 15–20 minutes each,
-4,000+ per month, across 27 state dealerships. 65–70 hours weekly with continuous
-compliance exposure.
-
-### Solution
-
-An unattended Python + Playwright pipeline spanning three systems on a **single persistent Okta
-session**:
-
-```
-Salesforce report (work queue)
-  → Okta SSO + native Okta Verify MFA
-  → DealerTrack: switch dealership → search → credit bureau → RBP notice → DocCenter PDF
-  → Salesforce: attach PDF → templated email → status update (#CSNS)
-  → telemetry row
-```
-
-**What made it work in production, not just in a demo:**
-
-- **Persistent Chrome profile.** Okta device trust survives between runs — one MFA, not one per customer.
-- **Dealership-switch minimization.** Customers sorted by state-group size before the loop; each switch costs ~10 s.
-- **Decision-ID-primary search with a last-5-digit stock fallback.** DealerTrack's index only stores trailing 5 digits — searching the full `AD57691-92797` returns *zero* results. That single transform eliminated most "customer not found" failures.
-- **Stock verification interlock.** Six independent detection methods confirm the customer's stock number is on the credit bureau page. No match → hard abort with a screenshot and HTML dump. This is what makes the compliance record defensible.
-- **6-strategy PDF acquisition ladder,** primary being an in-page `fetch()` + base64 (inherits the authenticated session, never depends on a toolbar button existing) — with a validation gate on size *and* magic bytes before any file is accepted.
-- **Per-customer CSV telemetry,** written before teardown so a crash during shutdown doesn't lose the run history.
-
-### Stack
-
-Python · Playwright (sync) · Salesforce Lightning · DealerTrack · Okta SSO · pywinauto · Windows UIA · Tesseract OCR · Claude · VS Code
+- **4,000+** credit disclosure transactions automated per month
+- **5,000+** transactions processed per month across all systems
+- **230+** manual hours returned per month
+- Disclosure handling cut from **15+ minutes** of manual work to **~2.5 minutes** unattended
+- Funding submission cut to **~90 seconds** per transaction, and weekly funding workload from **30+ hours to under 3**
 
 ---
 
-## 2. Fraud & Identity Verification
+## 1. Compliance Disclosure Automation
 
-### Problem
+**Problem.** Every financed delivery required a regulated credit disclosure. Operators generated each notice by hand, then delivered it to the customer and updated the record. At thousands of transactions a month, this used a lot of team capacity and created ongoing compliance exposure.
 
-Risk & Compliance needed identity verification and fraud screening on flagged applications at a
-volume the team couldn't clear manually — with an audit trail good enough to defend after the fact.
+**Solution.** An unattended Python and Playwright pipeline. It reads a CRM work queue, generates and validates each customer's disclosure, delivers it with a templated email, and updates the record status.
 
-### Solution
+**What made it production-grade:**
+- **Jurisdiction batching:** groups records so the pipeline switches context less often and each run takes less time.
+- **Identifier normalization:** matches each record to the lookup format the target system expects, which eliminated most "record not found" failures.
+- **Verification interlock:** confirms the document belongs to the right customer before delivery. On a mismatch it stops the run and captures evidence.
+- **Document validation gate:** checks file integrity before anything is sent to a customer.
+- **Per-transaction logging:** writes the log before shutdown, so even a failed run leaves an audit trail.
 
-Automated screening and routing across:
-
-- **LexisNexis InstantID** — identity resolution and verification
-- **LexisNexis Emailage** — email-based fraud risk scoring
-- **SharePoint** — immutable audit logging
-- **Salesforce** — workflow routing and case disposition
-
-### Impact
-
-- 100% automated coverage of flagged applications
-- Eliminated the manual identity-verification bottleneck entirely
-- Audit-ready reporting infrastructure — every decision reconstructable from logged evidence
-
-### Stack
-
-Python · Playwright · LexisNexis APIs · SharePoint · Salesforce · Okta SSO · Claude
+**Stack:** Python · Playwright · Salesforce
 
 ---
 
-## 3. Funding Submission Bot
+## 2. Fraud and Identity Screening
 
-### Problem
+**Problem.** Risk and Compliance needed identity and fraud screening on flagged applications at a volume manual review couldn't keep up with. Every decision also needed an audit trail that could be defended later.
 
-Post-delivery funding package submission was a repetitive multi-system sequence — pull
-documents, upload to the lender portal, submit the package, update status — at roughly 4
-minutes per transaction, 30+ hours weekly.
+**Solution.** Automated screening sends flagged applications through third-party identity and fraud verification services. It logs results to an audit store and routes cases for disposition in the CRM.
 
-### Solution
+**Impact:** Every flagged application screened automatically. The manual verification bottleneck is gone, and every decision can be traced to logged evidence.
 
-Event-driven automation triggered by Salesforce delivery status changes:
-
-- Pulled funding documentation automatically on status transition
-- Uploaded documents to DealerTrack
-- Submitted completed lender funding packages
-- Wrote workflow status back to Salesforce
-
-Built on the same authenticated-session core as the CSN bot — the expensive, fragile part
-(SSO, MFA, session persistence) was already solved and reusable.
-
-### Impact
-
-- ~ 4 minutes → ~90 seconds per transaction
-- 30+ weekly hours → under 3
-- Near-zero operational error rate
-
-### Stack
-
-Python · Playwright · Salesforce API · DealerTrack · Okta SSO · Claude
+**Stack:** Python · Playwright · REST APIs · Salesforce
 
 ---
 
-## 4. LNFD — MCP Automation Platform
+## 3. Funding Submission Automation
 
-**The current build: the same automation capability, restructured so an LLM can drive it directly.**
+**Problem.** Submitting post-delivery funding packages was a repetitive multi-system sequence: gather documents, submit to the lender channel, update status. It took up significant weekly capacity.
 
-The three systems above are pipelines — they do one fixed sequence well. The failure mode is
-that capability #7 costs as much to add as capability #3, and nothing is composable. This
-rebuild fixes that.
+**Solution.** Event-driven automation triggered by CRM delivery status changes. It gathers documentation, submits the funding package, and writes the status back to the CRM. It reuses the shared automation core from System 1, so it was built on proven components.
 
-### Architecture
+**Impact:** About 90 seconds per transaction, a weekly workload reduction of more than 90%, and a near-zero operational error rate.
 
-```
-run.ps1  ─┐
-          ├─→ ensure_chrome() ─→ detached chrome.exe --user-data-dir=… --remote-debugging-port=9222
-mcp_server ┘        │
-                    ├─→ .session/cdp.json { ws, http, pid, port }
-                    └─→ Session() ─→ connect_over_cdp() ─→ live page
-```
-
-**Chrome is not owned by any Python process.** It's spawned as an independent OS process; the
-CLI and the MCP server both *attach* to it over the Chrome DevTools Protocol. Whoever runs
-first launches, the other attaches — "daemon primary" and "MCP cold-start" are one code path,
-not two.
-
-What that buys:
-
-| Action | The browser |
-|---|---|
-| Ctrl+C the CLI | Stays open |
-| Close the terminal | Stays open |
-| Restart the MCP server / Claude Code | Stays open, still authenticated |
-| `run.ps1 down` | *Now* it closes |
-
-Authenticate roughly once a day, not once per invocation.
-
-**A non-obvious consequence:** attaching is *quieter* against bot detection than launching.
-Playwright's own launcher is what sets `navigator.webdriver` — a CDP-attached real Chrome
-never sets it. The architecture chosen for session persistence turned out to be the better
-stealth posture too.
-
-### The MCP server
-
-A FastMCP server over stdio JSON-RPC exposing the live browser to any MCP client:
-
-| Tool | Purpose |
-|---|---|
-| `session_up(force_reauth, headless, open_salesforce)` | Ensure an authenticated session. Cold-start capable. |
-| `session_status()` | Alive? Where? Authenticated? Launches nothing. |
-| `session_down()` | Close the browser. |
-| `sf_extract_report(report_url, limit)` | Extract a Salesforce Lightning report. |
-| `skill_run(name, arguments)` | Generic dispatch to any registered skill. |
-| `skills_list()` | Registry introspection with JSON input schemas. |
-
-| Resource | Content |
-|---|---|
-| `dataset://state-mapping` | State names → 2-letter codes |
-| `dataset://sf-selectors` | Salesforce selector reference and known DOM quirks |
-| `artifact://sf-report-latest` | The most recent extraction, full debug counters |
-
-Two things about this server are not incidental:
-
-1. **Sync Playwright cannot run on the asyncio loop thread.** Playwright's sync API raises the moment it detects a running loop, and FastMCP invokes tools directly on it. Every browser-touching tool is `async` and hands its work to `to_thread.run_sync`.
-2. **stdout *is* the JSON-RPC transport.** Anything the automation prints corrupts the protocol stream. Browser work runs with `verbose=False`, with a `redirect_stdout(sys.stderr)` backstop, and every progress line in the launch path writes to stderr.
-
-### Skill registry
-
-New capability = new file. A module in `lnfd/skills/` exporting `NAME`, `DESCRIPTION`,
-`INPUT_SCHEMA`, and `run(page, **kwargs)` is auto-discovered and immediately callable from both
-the terminal and the LLM — no wiring anywhere else. Capability #7 costs what capability #3 cost.
-
-### Status
-
-Session management, Okta authentication (including native MFA), and Salesforce Lightning report
-extraction are working and verified. The MCP tool surface is complete and the server runs;
-registration is a single command. Both shipped skills are **read-only by design** — write
-operations against production records deserve a deliberate decision and explicit safety rails,
-not incremental drift.
-
-### Stack
-
-Python 3.12 · Playwright · Chrome DevTools Protocol · MCP (FastMCP) · anyio · PowerShell 5.1 · Claude Code
+**Stack:** Python · Playwright · Salesforce API
 
 ---
 
-## Engineering notes
+## 4. Agent-Native Automation Layer (MCP)
 
-The parts that took the longest are the parts that don't show up in a demo.
+Fixed pipelines do one sequence well, but every new capability costs as much as the last one and nothing is reusable. This layer puts the capabilities behind a Model Context Protocol server as composable skills.
 
-### Being signed in ≠ being authorized
+- **Skill registry.** Each capability is a self-contained module with a name, description, input schema, and run function. It is discovered automatically and callable from a CLI or an MCP client with no extra wiring.
+- **Read-only by default.** Every skill shipped so far is read-only. Writing to production records requires a deliberate design decision, explicit safeguards, and approval.
+- **Protocol hygiene.** Diagnostic output goes to stderr so it doesn't corrupt the JSON-RPC stream. Blocking work runs off the async event loop.
+- **Inspectable results.** Every tool returns structured output that records which strategy succeeded.
 
-Okta's per-application SAML gate is separate from having an Okta session. Navigating straight
-to a Salesforce deep link lands on an interstitial that *looks* like an app page. The extractor
-happily scraped it and returned `rows: 0, strategy: "none"` — no exception, exit code 1, and a
-full afternoon of debugging the wrong layer.
+**Stack:** Python · Playwright · MCP (FastMCP) · anyio
 
-Two rules came out of it, and they generalize:
+---
 
-- **Click the app tile, don't deep-link the vendor.** The click is what triggers the assertion.
-- **The gate raises.** If the automation is still on an identity provider domain after trying to reach the target app, abort loudly. Scraping a login page reports zero rows instead of an error, and that's the more expensive failure.
+## Engineering principles
 
-### Ladders, and recording which rung fired
-
-Every important interaction has 3–6 fallback strategies ordered by reliability, and **the
-winning strategy is recorded in the output**: `headerMethod`, `strategy`, `frameMethod`,
-`loadState`, `match_method`. Without that, debugging a DOM that drifted under you is guesswork.
-
-### MFA is a native Windows app
-
-
-
-
-
-The keyboard strategy presses keys at *whatever currently has focus* — harmless when the script
-typed the password, destructive when a human is mid-sign-in. It's gated behind an explicit
-`allow_blind_keys` flag that every manual path sets to `False`.
-
-### Fail loudly, never silently
-
-The two worst bugs in this codebase's history both produced clean-looking empty output: scraping
-an SSO gate as if it were a report, and a sticky header clone that doubled the column count from
-14 to 28, causing every row strategy to find nothing while 492 body cells sat in the DOM.
-
-Neither threw. Both looked like success.
-
-Design principles that fell out:
-
-1. A confusing error beats a clean-looking result that's silently wrong.
-2. Always write the diagnostic artifact — **even on failure**. It's the difference between a five-minute diagnosis and an afternoon.
-3. Never guess at a cause in an error message. State what was observed; distinguish only the cases you can actually distinguish.
-4. Assume a human is at the keyboard. Credentials are optional and blank by default.
-5. Read-only by default. Write access is a decision, not a side effect.
-
-### Documentation as a deliverable
-
-Each system ships with a rebuild specification written for the next engineer — or the next LLM
-— containing every non-obvious decision and failure mode discovered while building it, marked
-as pitfalls with symptom → root cause → fix → rule. Roughly 80% of the content exists because
-something failed in a way that wasn't predictable from the documentation. A reimplementation
-that skips those items appears to work and then fails silently in production.
-
-That's not incidental to the AI workflow. It's the input format that makes an LLM useful on a
-codebase it didn't write.
+1. **Fail loudly.** The most expensive bugs produce clean-looking empty output. In one case, a duplicated table header doubled the detected column count. Every parser returned nothing while hundreds of populated cells sat on the page. Nothing threw an error, and the run looked like a success.
+2. **Use fallback ladders and record the rung.** Critical interactions have several ordered strategies, and the output records which one worked. When the UI changes, that record is how you debug.
+3. **Always write the diagnostic artifact, even on failure.** That's the difference between a five-minute diagnosis and a lost afternoon.
+4. **Report observations, not guesses.** Error messages state what happened and only separate cases that can actually be told apart.
+5. **Read-only by default.** Write access is a decision, not a side effect.
+6. **Treat documentation as a deliverable.** Each system has a rebuild spec that records pitfalls as symptom → root cause → fix → rule. That format is also what makes an LLM useful on a codebase it didn't write.
 
 ---
 
 ## How I use AI
 
-AI is an execution and acceleration layer inside operational system design — not the product.
+AI is an acceleration layer inside system design, not the product. I use it for scaffolding, rapid prototyping, fast debugging cycles, turning failure logs into specifications, and building tool layers that agents can operate safely. I don't use it where every item needs human judgment, where a task runs only once, or where a mistake is expensive and hard to undo.
 
-**Where it earns its place:**
-
-- Prompt engineering and workflow-logic generation
-- Code scaffolding and rapid prototyping against unfamiliar DOMs
-- Debugging and iteration cycles measured in minutes instead of hours
-- Turning production failure telemetry into structured specifications
-- **Building the tools AI operates** — the MCP layer above exists so an LLM can drive real operational systems directly, with the safety rails wired in
-
-**Where it doesn't:** anything needing judgment on every item, anything that runs once, and
-anything where being wrong is expensive and hard to undo. Those need deliberate design, and
-the design is the job.
-
-Tools: Claude · Claude Code · MCP · VS Code
+All AI-assisted work follows employer policy on approved tools and data handling.
 
 ---
 
 ## About me
 
-Operations and systems builder with a background in finance operations and strategy. I design
-workflows that improve operational leverage, reduce friction, and accelerate execution — then I
-build them.
+Operations and systems builder with a background in financial services operations, program management, and cross-functional launches. I find the bottleneck that is actually expensive, map it honestly, and automate it so that failures surface loudly instead of quietly creating cleanup work for someone else.
 
-The through-line across everything here: find the bottleneck that's actually expensive, map it
-honestly, and automate it in a way that fails loudly rather than quietly producing work for
-someone else to clean up.
-
-**Focus areas:** automation · systems thinking · cross-functional execution · AI-assisted workflow design · product-adjacent operations
-
-[linkedin.com/in/mhdeng](https://linkedin.com/in/mhdeng)
+**Focus:** automation · systems thinking · cross-functional execution · AI-assisted workflow design · operational governance
